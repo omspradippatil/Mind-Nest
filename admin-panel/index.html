@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mind Nest Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #f6f0e8;
+      --bg2: #e9f2ee;
+      --card: rgba(255, 255, 255, 0.9);
+      --line: #d6e0da;
+      --ink: #1b2b25;
+      --muted: #50655c;
+      --accent: #1e8b70;
+      --accent2: #d17035;
+      --danger: #a81f39;
+      --ok: #0e7f3e;
+      --shadow: 0 12px 36px rgba(20, 43, 35, 0.14);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      color: var(--ink);
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(209, 112, 53, 0.25), transparent 32%),
+        radial-gradient(circle at 90% 8%, rgba(30, 139, 112, 0.24), transparent 32%),
+        linear-gradient(128deg, var(--bg), var(--bg2));
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .login-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      animation: fade-in 0.5s ease;
+    }
+
+    .login-card {
+      width: min(420px, 95vw);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .page {
+      width: min(1500px, 96vw);
+      margin: 24px auto;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 18px;
+      animation: rise 0.45s ease;
+    }
+
+    .sidebar {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      height: calc(100vh - 48px);
+      overflow: auto;
+      position: sticky;
+      top: 24px;
+    }
+
+    .main {
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 1.42rem;
+      line-height: 1.08;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #2f4a41;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #334d44;
+    }
+
+    input,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(30, 139, 112, 0.12);
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.91rem;
+      line-height: 1.44;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      opacity: 0.62;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0d6951);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #edf6f2;
+      color: #15392f;
+      border: 1px solid #c8ddd3;
+    }
+
+    .btn-danger {
+      background: #ffeef1;
+      color: #6f1f2f;
+      border: 1px solid #f8c9d2;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 0.76rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #ecf5f1;
+      color: #30524a;
+      white-space: nowrap;
+    }
+
+    .status-line {
+      margin: 0;
+      min-height: 20px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 8px;
+      vertical-align: middle;
+      background: #9aa8a3;
+    }
+
+    .dot.ok {
+      background: var(--ok);
+    }
+
+    .dot.warn {
+      background: var(--accent2);
+    }
+
+    .dot.err {
+      background: var(--danger);
+    }
+
+    .note,
+    .warn,
+    .error,
+    .success {
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.87rem;
+      line-height: 1.4;
+    }
+
+    .note {
+      background: #f3f7f5;
+      border: 1px solid #d5e4de;
+      color: #335047;
+    }
+
+    .warn {
+      background: #fff6e9;
+      border: 1px solid #ffdcb0;
+      color: #6d451f;
+    }
+
+    .error {
+      background: #ffeff2;
+      border: 1px solid #ffced6;
+      color: #7a2030;
+    }
+
+    .success {
+      background: #ecfbf2;
+      border: 1px solid #c2e8d1;
+      color: #145f34;
+    }
+
+    .table-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 14px;
+      min-height: 520px;
+    }
+
+    .table-list {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      min-height: 420px;
+    }
+
+    .table-list-head {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 8px;
+    }
+
+    .table-items {
+      overflow: auto;
+      max-height: 560px;
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .table-btn {
+      text-align: left;
+      background: #fff;
+      border: 1px solid #d9e5df;
+      border-radius: 10px;
+      padding: 9px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .table-btn.active {
+      border-color: var(--accent);
+      background: #f2faf7;
+      box-shadow: 0 0 0 2px rgba(30, 139, 112, 0.15);
+    }
+
+    .data-wrap {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      min-height: 420px;
+    }
+
+    .meta {
+      border-bottom: 1px solid var(--line);
+      padding: 10px;
+      color: #3f5a50;
+      font-size: 0.9rem;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .columns {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .columns .pill {
+      background: #fff2e9;
+      border: 1px solid #ffd7bf;
+      color: #7b431f;
+    }
+
+    .table-scroll {
+      overflow: auto;
+      max-height: 530px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #ebf1ed;
+      border-right: 1px solid #f2f6f4;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f8fbfa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.8rem;
+      color: #2e4b42;
+    }
+
+    td code {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.83rem;
+      background: #f6faf8;
+      border: 1px solid #e5efea;
+      border-radius: 6px;
+      padding: 2px 5px;
+    }
+
+    .footer-actions {
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 10px;
+      overflow: auto;
+      background: #f8faf9;
+      border: 1px solid #e3ece8;
+      border-radius: 10px;
+      min-height: 140px;
+      max-height: 320px;
+      font-size: 0.84rem;
+      font-family: "IBM Plex Mono", monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .fade {
+      opacity: 0;
+      transform: translateY(8px);
+      animation: fade-up 0.45s ease forwards;
+    }
+
+    .fade:nth-child(2) {
+      animation-delay: 0.07s;
+    }
+
+    .fade:nth-child(3) {
+      animation-delay: 0.14s;
+    }
+
+    .fade:nth-child(4) {
+      animation-delay: 0.21s;
+    }
+
+    @keyframes fade-up {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 1160px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .table-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .output-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+      }
+
+      .panel,
+      .sidebar,
+      .login-card {
+        padding: 12px;
+      }
+
+      th,
+      td {
+        max-width: 190px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section id="loginScreen" class="login-screen">
+    <div class="card login-card">
+      <h1 class="title" style="margin:0;">Mind Nest Admin Access</h1>
+      <p class="subtitle" style="margin:0;">Enter admin credentials to open the panel.</p>
+
+      <div>
+        <label for="adminUser">User ID</label>
+        <input id="adminUser" type="text" placeholder="username" autocomplete="username" />
+      </div>
+
+      <div>
+        <label for="adminPass">Password</label>
+        <input id="adminPass" type="password" placeholder="Password" autocomplete="current-password" />
+      </div>
+
+      <div class="row">
+        <button id="unlockBtn" class="btn-primary">Login</button>
+      </div>
+
+      <div id="loginStatus" class="note">Locked.</div>
+    </div>
+  </section>
+
+  <div id="adminApp" class="page hidden">
+    <aside class="card sidebar">
+      <section class="fade">
+        <h1 class="title">Mind Nest Admin</h1>
+        <p class="subtitle">Table explorer and SQL runner.</p>
+      </section>
+
+      <section class="stack fade">
+        <div class="header-row">
+          <h3>Session</h3>
+          <span class="pill" id="apiMode">panel rpc</span>
+        </div>
+        <div id="panelUserBox" class="success">Panel user: sanika</div>
+        <div class="row">
+          <button id="refreshTablesBtn" class="btn-secondary">Refresh Tables</button>
+          <button id="logoutBtn" class="btn-danger">Logout</button>
+        </div>
+        <p class="status-line" id="statusLine"><span class="dot"></span>Ready</p>
+      </section>
+
+      <section class="stack fade">
+        <h3>Setup Reminder</h3>
+        <div id="setupHint" class="warn">
+          Run backend/admin_panel_setup.sql in Supabase SQL Editor to enable panel RPC functions.
+        </div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="card panel fade">
+        <div class="header-row" style="margin-bottom: 12px;">
+          <h2>Tables</h2>
+          <span class="pill" id="tableModeHint">RPC mode</span>
+        </div>
+
+        <div class="table-layout">
+          <div class="table-list">
+            <div class="table-list-head">
+              <input id="tableSearch" type="text" placeholder="Search table" />
+            </div>
+            <div id="tableItems" class="table-items"></div>
+          </div>
+
+          <div class="data-wrap">
+            <div id="tableMeta" class="meta">Select a table to view records.</div>
+            <div id="columnsMeta" class="columns"></div>
+            <div id="tableDataArea" class="table-scroll"></div>
+            <div class="footer-actions">
+              <div class="row">
+                <button id="prevPageBtn" class="btn-secondary">Prev</button>
+                <button id="nextPageBtn" class="btn-secondary">Next</button>
+              </div>
+              <div id="pageMeta">page size 100</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel fade">
+        <div class="header-row">
+          <h2>SQL Runner</h2>
+          <button id="runSqlBtn" class="btn-primary">Run SQL</button>
+        </div>
+
+        <textarea id="sqlEditor" spellcheck="false">select table_name from information_schema.tables where table_schema = 'public' order by table_name;</textarea>
+
+        <div class="output-grid">
+          <div>
+            <h3>Result Table</h3>
+            <div id="sqlResultTable" class="table-scroll"></div>
+          </div>
+          <div>
+            <h3>Result JSON</h3>
+            <pre id="sqlResultJson">No output yet.</pre>
+          </div>
+        </div>
+
+        <div id="sqlStatus" class="note" style="margin-top: 12px;">Ready.</div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const SUPABASE_URL = "https://yzaqwrrpljkwvhmdkqmd.supabase.co";
+      const SUPABASE_ANON_KEY = "sb_publishable_IJa1X_ZRS1dRQoc0IJFEqw_I4Psmt0B";
+      const PANEL_USER = "sanika";
+      const PANEL_PASSWORD = "om";
+      const PANEL_UNLOCK_KEY = "mindnest_panel_unlocked";
+      const PAGE_SIZE = 100;
+
+      const state = {
+        client: null,
+        panelAuth: null,
+        tables: [],
+        activeTable: null,
+        activeColumns: [],
+        offset: 0,
+        totalRows: 0
+      };
+
+      const el = {
+        loginScreen: document.getElementById("loginScreen"),
+        adminApp: document.getElementById("adminApp"),
+        adminUser: document.getElementById("adminUser"),
+        adminPass: document.getElementById("adminPass"),
+        unlockBtn: document.getElementById("unlockBtn"),
+        loginStatus: document.getElementById("loginStatus"),
+        panelUserBox: document.getElementById("panelUserBox"),
+        logoutBtn: document.getElementById("logoutBtn"),
+        refreshTablesBtn: document.getElementById("refreshTablesBtn"),
+        statusLine: document.getElementById("statusLine"),
+        setupHint: document.getElementById("setupHint"),
+        apiMode: document.getElementById("apiMode"),
+        tableSearch: document.getElementById("tableSearch"),
+        tableItems: document.getElementById("tableItems"),
+        tableModeHint: document.getElementById("tableModeHint"),
+        tableMeta: document.getElementById("tableMeta"),
+        columnsMeta: document.getElementById("columnsMeta"),
+        tableDataArea: document.getElementById("tableDataArea"),
+        prevPageBtn: document.getElementById("prevPageBtn"),
+        nextPageBtn: document.getElementById("nextPageBtn"),
+        pageMeta: document.getElementById("pageMeta"),
+        sqlEditor: document.getElementById("sqlEditor"),
+        runSqlBtn: document.getElementById("runSqlBtn"),
+        sqlResultTable: document.getElementById("sqlResultTable"),
+        sqlResultJson: document.getElementById("sqlResultJson"),
+        sqlStatus: document.getElementById("sqlStatus")
+      };
+
+      boot();
+
+      function boot() {
+        bindEvents();
+
+        if (sessionStorage.getItem(PANEL_UNLOCK_KEY) === "1") {
+          unlockPanel(true);
+          return;
+        }
+
+        showLogin();
+      }
+
+      function bindEvents() {
+        el.unlockBtn.addEventListener("click", () => unlockPanel(false));
+        el.adminPass.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            unlockPanel(false);
+          }
+        });
+
+        el.logoutBtn.addEventListener("click", logoutPanel);
+        el.refreshTablesBtn.addEventListener("click", loadTables);
+        el.runSqlBtn.addEventListener("click", runSql);
+
+        el.tableSearch.addEventListener("input", () => {
+          renderTableList(filterTables(el.tableSearch.value));
+        });
+
+        el.prevPageBtn.addEventListener("click", async () => {
+          if (!state.activeTable || state.offset === 0) {
+            return;
+          }
+          state.offset = Math.max(0, state.offset - PAGE_SIZE);
+          await loadActiveTableRows();
+        });
+
+        el.nextPageBtn.addEventListener("click", async () => {
+          if (!state.activeTable) {
+            return;
+          }
+          if (state.totalRows && state.offset + PAGE_SIZE >= state.totalRows) {
+            return;
+          }
+          state.offset += PAGE_SIZE;
+          await loadActiveTableRows();
+        });
+      }
+
+      async function unlockPanel(fromSession) {
+        const typedUser = fromSession ? PANEL_USER : (el.adminUser.value || "").trim();
+        const typedPass = fromSession ? PANEL_PASSWORD : (el.adminPass.value || "").trim();
+
+        if (typedUser !== PANEL_USER || typedPass !== PANEL_PASSWORD) {
+          el.loginStatus.className = "error";
+          el.loginStatus.textContent = "Invalid user id or password.";
+          return;
+        }
+
+        state.panelAuth = { user: PANEL_USER, password: PANEL_PASSWORD };
+        sessionStorage.setItem(PANEL_UNLOCK_KEY, "1");
+        el.panelUserBox.textContent = "Panel user: " + PANEL_USER;
+        showApp();
+
+        try {
+          ensureClient();
+          setStatus("Connected.", "ok");
+          await loadTables();
+        } catch (error) {
+          setStatus("Connection failed: " + humanizeError(error), "err");
+          el.setupHint.className = "error";
+          el.setupHint.textContent = "Unable to initialize Supabase client.";
+        }
+      }
+
+      function logoutPanel() {
+        sessionStorage.removeItem(PANEL_UNLOCK_KEY);
+        state.panelAuth = null;
+        state.tables = [];
+        state.activeTable = null;
+        state.activeColumns = [];
+        state.offset = 0;
+        state.totalRows = 0;
+
+        renderTableList([]);
+        clearTableView("Logged out.");
+        setSqlStatus("Logged out.", "note");
+
+        if (state.client && state.client.auth) {
+          state.client.auth.signOut();
+        }
+
+        showLogin();
+      }
+
+      function showLogin() {
+        el.loginScreen.classList.remove("hidden");
+        el.adminApp.classList.add("hidden");
+        el.loginStatus.className = "note";
+        el.loginStatus.textContent = "Locked.";
+        el.adminUser.value = "";
+        el.adminPass.value = "";
+        el.adminUser.focus();
+      }
+
+      function showApp() {
+        el.loginScreen.classList.add("hidden");
+        el.adminApp.classList.remove("hidden");
+      }
+
+      function ensureClient() {
+        if (state.client) {
+          return;
+        }
+
+        if (!window.supabase || !window.supabase.createClient) {
+          throw new Error("Supabase JS not loaded");
+        }
+
+        state.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false
+          }
+        });
+      }
+
+      function authPayload() {
+        if (!state.panelAuth) {
+          return null;
+        }
+
+        return {
+          p_user: state.panelAuth.user,
+          p_password: state.panelAuth.password
+        };
+      }
+
+      async function loadTables() {
+        if (!state.panelAuth) {
+          showLogin();
+          return;
+        }
+
+        setStatus("Loading tables...", "warn");
+        state.activeTable = null;
+        state.offset = 0;
+
+        const creds = authPayload();
+        const rpcRes = await state.client.rpc("panel_admin_list_tables", creds);
+
+        if (rpcRes.error) {
+          renderTableList([]);
+          clearTableView("Cannot load tables.");
+          setStatus("Table load failed: " + humanizeError(rpcRes.error), "err");
+          el.tableModeHint.textContent = "RPC setup missing";
+          el.tableModeHint.className = "pill";
+          el.setupHint.className = "error";
+          el.setupHint.textContent = "Run backend/admin_panel_setup.sql in Supabase SQL Editor, then refresh.";
+          return;
+        }
+
+        state.tables = normalizeTables(rpcRes.data);
+        el.tableModeHint.textContent = "RPC mode";
+        el.setupHint.className = "success";
+        el.setupHint.textContent = "Panel RPC active. All public tables are available.";
+        setStatus("Tables loaded.", "ok");
+
+        renderTableList(filterTables(el.tableSearch.value));
+
+        if (state.tables.length > 0) {
+          await selectTable(state.tables[0].table);
+        } else {
+          clearTableView("No tables found.");
+        }
+      }
+
+      function normalizeTables(payload) {
+        if (!Array.isArray(payload)) {
+          return [];
+        }
+
+        return payload
+          .map((item) => {
+            if (typeof item === "string") {
+              return { table: item, columns: [], rowEstimate: null };
+            }
+            return {
+              table: item.table || item.table_name || "unknown",
+              columns: Array.isArray(item.columns) ? item.columns : [],
+              rowEstimate: typeof item.rowEstimate === "number" ? item.rowEstimate : null
+            };
+          })
+          .filter((table) => table.table && table.table !== "unknown")
+          .sort((a, b) => a.table.localeCompare(b.table));
+      }
+
+      function filterTables(keyword) {
+        const needle = (keyword || "").trim().toLowerCase();
+        if (!needle) {
+          return state.tables;
+        }
+
+        return state.tables.filter((table) => table.table.toLowerCase().includes(needle));
+      }
+
+      function renderTableList(list) {
+        if (!Array.isArray(list) || list.length === 0) {
+          el.tableItems.innerHTML = "<div class='note'>No matching tables.</div>";
+          return;
+        }
+
+        const html = list
+          .map((table) => {
+            const active = state.activeTable === table.table;
+            const estimate = typeof table.rowEstimate === "number" ? String(table.rowEstimate) : "?";
+
+            return (
+              "<button class='table-btn " + (active ? "active" : "") + "' data-table='" + escapeAttr(table.table) + "'>" +
+              "<span>" + escapeHtml(table.table) + "</span>" +
+              "<span class='pill'>" + escapeHtml(estimate) + "</span>" +
+              "</button>"
+            );
+          })
+          .join("");
+
+        el.tableItems.innerHTML = html;
+
+        el.tableItems.querySelectorAll("button[data-table]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await selectTable(button.getAttribute("data-table"));
+          });
+        });
+      }
+
+      async function selectTable(tableName) {
+        if (!tableName) {
+          return;
+        }
+
+        state.activeTable = tableName;
+        state.offset = 0;
+
+        const found = state.tables.find((table) => table.table === tableName);
+        state.activeColumns = found && Array.isArray(found.columns) ? found.columns : [];
+
+        renderTableList(filterTables(el.tableSearch.value));
+        await loadActiveTableRows();
+      }
+
+      async function loadActiveTableRows() {
+        if (!state.activeTable || !state.panelAuth) {
+          return;
+        }
+
+        const current = state.activeTable;
+        el.tableMeta.textContent = "Loading " + current + "...";
+        el.tableDataArea.innerHTML = "<div class='note' style='margin:10px;'>Fetching rows...</div>";
+
+        const creds = authPayload();
+        const rpcRes = await state.client.rpc("panel_admin_table_rows", {
+          p_user: creds.p_user,
+          p_password: creds.p_password,
+          p_table: current,
+          p_limit: PAGE_SIZE,
+          p_offset: state.offset
+        });
+
+        if (rpcRes.error) {
+          el.tableDataArea.innerHTML = "<div class='error' style='margin:10px;'>" + escapeHtml(humanizeError(rpcRes.error)) + "</div>";
+          el.tableMeta.textContent = "Failed to load " + current;
+          el.columnsMeta.innerHTML = "";
+          return;
+        }
+
+        const payload = rpcRes.data || {};
+        const rows = Array.isArray(payload.rows) ? payload.rows : [];
+        const total = Number(payload.total || 0);
+        state.totalRows = total;
+
+        renderTableData(current, rows, total);
+
+        const from = state.offset + 1;
+        const to = Math.min(state.offset + PAGE_SIZE, Math.max(state.totalRows, state.offset));
+        el.pageMeta.textContent = "rows " + from + " - " + to + " of " + state.totalRows;
+      }
+
+      function renderTableData(tableName, rows, total) {
+        const colsFromMeta = state.activeColumns
+          .map((column) => (column && column.name ? String(column.name) : ""))
+          .filter(Boolean);
+
+        const colsFromRows = collectColumns(rows);
+        const columns = colsFromMeta.length ? colsFromMeta : colsFromRows;
+
+        el.tableMeta.innerHTML =
+          "Table: <strong>" + escapeHtml(tableName) +
+          "</strong> | total rows: <strong>" + escapeHtml(String(total)) + "</strong>";
+
+        if (columns.length) {
+          el.columnsMeta.innerHTML = columns
+            .map((name) => "<span class='pill'>" + escapeHtml(name) + "</span>")
+            .join("");
+        } else {
+          el.columnsMeta.innerHTML = "<span class='pill'>No columns in current page.</span>";
+        }
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          el.tableDataArea.innerHTML = "<div class='note' style='margin:10px;'>No rows returned.</div>";
+          return;
+        }
+
+        el.tableDataArea.innerHTML = buildHtmlTable(rows, columns);
+      }
+
+      function clearTableView(message) {
+        el.tableMeta.textContent = message || "No data";
+        el.columnsMeta.innerHTML = "";
+        el.tableDataArea.innerHTML = "<div class='note' style='margin:10px;'>" + escapeHtml(message || "No data") + "</div>";
+        el.pageMeta.textContent = "page size 100";
+      }
+
+      async function runSql() {
+        if (!state.panelAuth) {
+          showLogin();
+          return;
+        }
+
+        const sql = (el.sqlEditor.value || "").trim();
+        if (!sql) {
+          setSqlStatus("Type SQL first.", "warn");
+          return;
+        }
+
+        withBusy(el.runSqlBtn, "Running...", async () => {
+          const creds = authPayload();
+          const rpcRes = await state.client.rpc("panel_admin_run_sql", {
+            p_user: creds.p_user,
+            p_password: creds.p_password,
+            p_sql: sql
+          });
+
+          if (rpcRes.error) {
+            throw rpcRes.error;
+          }
+
+          renderSqlPayload(rpcRes.data || {});
+        });
+      }
+
+      function renderSqlPayload(payload) {
+        el.sqlResultJson.textContent = JSON.stringify(payload, null, 2);
+
+        if (payload.kind === "rows") {
+          const rows = Array.isArray(payload.rows) ? payload.rows : [];
+          if (rows.length === 0) {
+            el.sqlResultTable.innerHTML = "<div class='note' style='margin:8px;'>Query returned 0 rows.</div>";
+          } else {
+            const columns = collectColumns(rows);
+            el.sqlResultTable.innerHTML = buildHtmlTable(rows, columns);
+          }
+          setSqlStatus("SELECT query completed.", "success");
+          return;
+        }
+
+        if (payload.kind === "command") {
+          el.sqlResultTable.innerHTML =
+            "<div class='success' style='margin:8px;'>" +
+            "Command executed. affected rows: " + escapeHtml(String(payload.affectedRows || 0)) +
+            "</div>";
+          setSqlStatus("Command executed.", "success");
+          return;
+        }
+
+        el.sqlResultTable.innerHTML = "<div class='note' style='margin:8px;'>Unknown result format.</div>";
+        setSqlStatus("Received unrecognized payload.", "warn");
+      }
+
+      function setSqlStatus(message, type) {
+        const className = type === "error"
+          ? "error"
+          : type === "success"
+            ? "success"
+            : type === "warn"
+              ? "warn"
+              : "note";
+
+        el.sqlStatus.className = className;
+        el.sqlStatus.textContent = message;
+      }
+
+      function buildHtmlTable(rows, columns) {
+        const head = columns.map((column) => "<th>" + escapeHtml(column) + "</th>").join("");
+
+        const body = rows
+          .map((row) => {
+            const cells = columns
+              .map((column) => "<td>" + valueToCell(row[column]) + "</td>")
+              .join("");
+
+            return "<tr>" + cells + "</tr>";
+          })
+          .join("");
+
+        return "<table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+      }
+
+      function collectColumns(rows) {
+        const set = new Set();
+
+        if (!Array.isArray(rows)) {
+          return [];
+        }
+
+        rows.forEach((row) => {
+          if (row && typeof row === "object") {
+            Object.keys(row).forEach((key) => set.add(key));
+          }
+        });
+
+        return Array.from(set);
+      }
+
+      function valueToCell(value) {
+        if (value === null || typeof value === "undefined") {
+          return "<code>null</code>";
+        }
+
+        if (typeof value === "object") {
+          return "<code>" + escapeHtml(JSON.stringify(value)) + "</code>";
+        }
+
+        const raw = String(value);
+        if (raw.length > 180) {
+          return "<code title='" + escapeAttr(raw) + "'>" + escapeHtml(raw.slice(0, 180)) + "...</code>";
+        }
+
+        return "<code>" + escapeHtml(raw) + "</code>";
+      }
+
+      async function withBusy(button, busyLabel, task) {
+        const previous = button.textContent;
+        button.disabled = true;
+        button.textContent = busyLabel;
+
+        try {
+          await task();
+        } catch (error) {
+          const message = humanizeError(error);
+          setStatus(message, "err");
+          setSqlStatus(message, "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = previous;
+        }
+      }
+
+      function setStatus(message, type) {
+        const dotClass = type === "ok" ? "ok" : type === "warn" ? "warn" : type === "err" ? "err" : "";
+        el.statusLine.innerHTML = "<span class='dot " + dotClass + "'></span>" + escapeHtml(message || "");
+      }
+
+      function humanizeError(error) {
+        if (!error) {
+          return "Unknown error";
+        }
+
+        if (typeof error === "string") {
+          return error;
+        }
+
+        return error.message || error.error_description || JSON.stringify(error);
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function escapeAttr(value) {
+        return escapeHtml(value).replaceAll("`", "");
+      }
+    })();
+  </script>
+</body>
+</html>
